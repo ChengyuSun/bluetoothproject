@@ -7,6 +7,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Handler;
+
+import java.lang.reflect.Method;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -19,9 +21,8 @@ public class BlueToothOperation {
     private Set<BluetoothDevice> bondedDevices;
 
 
-    public BlueToothOperation(Context context1){
+    public BlueToothOperation(){
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        bondedDevices = mBluetoothAdapter.getBondedDevices();
         searchedDevices=new HashMap<>();
     }
 
@@ -29,7 +30,8 @@ public class BlueToothOperation {
         return mBluetoothAdapter.isEnabled();
     }
 
-    public Map searchDevice(){
+    public void searchDevice(){
+        searchedDevices.clear();
         mBluetoothAdapter.startDiscovery();
         System.out.println(new Date()+"开始扫描");
         //三秒后结束扫描
@@ -39,20 +41,51 @@ public class BlueToothOperation {
                 mBluetoothAdapter.cancelDiscovery();
                 System.out.println(new Date()+"停止扫描");
             }
-        }, 5000);
-        return searchedDevices;
+        }, 10000);
     }
 
-    public void connect(String deviceName){
-        BluetoothDevice bluetoothDevice=searchedDevices.get(deviceName);
+    public void bound(String deviceName){
+        BluetoothDevice device=searchedDevices.get(deviceName);
+        if(device==null){
+            System.out.println("设备为空！！！！！");
+        }
+        boundDetail(device);
+        //device.createRfcommSocketToServiceRecord();
+    }
 
+    public void boundDetail(BluetoothDevice device){
+        //配对之前把扫描关闭
+        if (mBluetoothAdapter.isDiscovering()){
+            mBluetoothAdapter.cancelDiscovery();
+        }
+        //判断设备是否配对，没有配对再配，配对了就不需要配了
+        if (device.getBondState() == BluetoothDevice.BOND_NONE) {
+            try {
+                Method createBondMethod = device.getClass().getMethod("createBond");
+                Boolean returnValue = (Boolean) createBondMethod.invoke(device);
+                returnValue.booleanValue();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+
+    public void disable(){
+        mBluetoothAdapter.disable();
     }
 
     public Set<BluetoothDevice> getBondedDevices() {
+        bondedDevices = mBluetoothAdapter.getBondedDevices();
         return bondedDevices;
     }
 
-    public void addSearchedDevice(String name,BluetoothDevice device){
+    public Map<String, BluetoothDevice> getSearchedDevices() {
+        return searchedDevices;
+    }
+
+    public void addSearchedDevice(String name, BluetoothDevice device){
+        System.out.println("加入新设备："+name);
         searchedDevices.put(name,device);
     }
 }
