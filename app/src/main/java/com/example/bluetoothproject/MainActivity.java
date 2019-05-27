@@ -26,12 +26,14 @@ import java.util.List;
 
 
 public class MainActivity extends AppCompatActivity {
-   // public static final String bounded_devices="";
+    public static final String object_name="";
     private static final int PERMISSION_REQUEST_COARSE_LOCATION = 1;
     //实例化蓝牙操作类
-    public BlueToothOperation blueToothOperation=new BlueToothOperation();
+    public static final BlueToothOperation blueToothOperation=new BlueToothOperation();
     //搜索到的设备列表
     private List<String> allDevices=new ArrayList<>();
+    //绑定的设备列表
+    private List<String> boundedDeviceList=new ArrayList<>();
     //界面组件
     private TextView textView;
     private ListView listView_searched;
@@ -164,7 +166,6 @@ public class MainActivity extends AppCompatActivity {
                 MainActivity.this, android.R.layout.simple_list_item_1, allDevices
         );
         if(adapter.getCount()!=0){
-            textView.setText("");
             listView_searched.setAdapter(adapter);
         }
     }
@@ -175,12 +176,12 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(getApplicationContext(), "请先打开蓝牙", Toast.LENGTH_SHORT).show();
             return;
         }
-        List<String> deviceList=new ArrayList<>();
+        boundedDeviceList=new ArrayList<>();
         for(BluetoothDevice bluetoothDevice:blueToothOperation.getBondedDevices()){
-           deviceList.add(bluetoothDevice.getName());
+           boundedDeviceList.add(bluetoothDevice.getName());
         }
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(
-                MainActivity.this, android.R.layout.simple_list_item_1, deviceList);
+                MainActivity.this, android.R.layout.simple_list_item_1, boundedDeviceList);
         ListView boundedDevices=(ListView)findViewById(R.id.listView_boundedDevices);
         boundedDevices.setAdapter(adapter);
     }
@@ -193,8 +194,10 @@ public class MainActivity extends AppCompatActivity {
 
     //连接设备-->进行界面跳转
     public void connect(int position){
-        Intent intent = new Intent(this, BoundedDevicesActivity.class);
-        //intent.putExtra(bounded_devices, deviceList);
+        String objectName=boundedDeviceList.get(position);
+        blueToothOperation.connect(objectName);
+        Intent intent = new Intent(this, BoundedDeviceActivity.class);
+        intent.putExtra(object_name,objectName);
         startActivity(intent);
     }
 

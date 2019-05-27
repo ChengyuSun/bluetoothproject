@@ -2,12 +2,10 @@ package com.example.bluetoothproject;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
+import android.bluetooth.BluetoothSocket;
 import android.os.Handler;
 
+import java.io.File;
 import java.lang.reflect.Method;
 import java.util.Date;
 import java.util.HashMap;
@@ -19,6 +17,7 @@ public class BlueToothOperation {
     private BluetoothAdapter mBluetoothAdapter;
     private Map<String,BluetoothDevice> searchedDevices;
     private Set<BluetoothDevice> bondedDevices;
+    //private BluetoothSocket socket;
 
 
     public BlueToothOperation(){
@@ -46,9 +45,6 @@ public class BlueToothOperation {
 
     public void bound(String deviceName){
         BluetoothDevice device=searchedDevices.get(deviceName);
-        if(device==null){
-            System.out.println("设备为空！！！！！");
-        }
         boundDetail(device);
         //device.createRfcommSocketToServiceRecord();
     }
@@ -68,6 +64,21 @@ public class BlueToothOperation {
                 e.printStackTrace();
             }
         }
+    }
+
+
+    public void connect(String deviceName){
+        BluetoothDevice device=searchedDevices.get(deviceName);
+        //TODO  connect
+    }
+
+
+    public void sendMessage(String massage){
+        //TODO sendMessage
+    }
+
+    public void sendFile(File file){
+        //TODO
     }
 
 
