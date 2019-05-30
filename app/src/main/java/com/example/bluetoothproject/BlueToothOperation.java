@@ -2,56 +2,70 @@ package com.example.bluetoothproject;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 import android.os.Handler;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 
 public class BlueToothOperation {
+    private static final int STATUS_CONNECT = 0x11;
+
     private BluetoothAdapter mBluetoothAdapter;
-    private Map<String,BluetoothDevice> searchedDevices;
+    private Map<String, BluetoothDevice> searchedDevices;
     private Set<BluetoothDevice> bondedDevices;
-    //private BluetoothSocket socket;
+
+    private BluetoothServerSocket mServerSocket = null;
+    private BluetoothSocket mSocket = null;
+
+    private UUID mUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+
+    private OutputStream outputStream;
+    private InputStream inputStream;
 
 
-    public BlueToothOperation(){
+    public BlueToothOperation() {
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        searchedDevices=new HashMap<>();
+        searchedDevices = new HashMap<>();
     }
 
-    public boolean isEnable(){
+    public boolean isEnable() {
         return mBluetoothAdapter.isEnabled();
     }
 
-    public void searchDevice(){
+    public void searchDevice() {
         searchedDevices.clear();
         mBluetoothAdapter.startDiscovery();
-        System.out.println(new Date()+"开始扫描");
+        System.out.println(new Date() + "开始扫描");
         //三秒后结束扫描
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
                 mBluetoothAdapter.cancelDiscovery();
-                System.out.println(new Date()+"停止扫描");
+                System.out.println(new Date() + "停止扫描");
             }
         }, 10000);
     }
 
-    public void bound(String deviceName){
-        BluetoothDevice device=searchedDevices.get(deviceName);
+    public void bound(String deviceName) {
+        BluetoothDevice device = searchedDevices.get(deviceName);
         boundDetail(device);
         //device.createRfcommSocketToServiceRecord();
     }
 
-    public void boundDetail(BluetoothDevice device){
+    public void boundDetail(BluetoothDevice device) {
         //配对之前把扫描关闭
-        if (mBluetoothAdapter.isDiscovering()){
+        if (mBluetoothAdapter.isDiscovering()) {
             mBluetoothAdapter.cancelDiscovery();
         }
         //判断设备是否配对，没有配对再配，配对了就不需要配了
@@ -66,23 +80,60 @@ public class BlueToothOperation {
         }
     }
 
+    //进入APP调用，初始化服务端
+    public void initServerSocket() {
+        new Thread() {
+            @Override
+            public void run() {
+                try {
+                    mServerSocket = mBluetoothAdapter.listenUsingRfcommWithServiceRecord("server_socket", mUUID);
 
-    public void connect(String deviceName){
-        BluetoothDevice device=searchedDevices.get(deviceName);
-        //TODO  connect
+                    mSocket = mServerSocket.accept();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }.start();
     }
 
+    //客户端调用，去找到相同mUUID的服务端
+    public void connect(String deviceName) {
+        final BluetoothDevice device = searchedDevices.get(deviceName);
+        if (device != null) {
+            new Thread() {
+                @Override
+                public void run() {
+                    try {
+                        mSocket = device.createRfcommSocketToServiceRecord(mUUID);
+                        //连接一个可以连接的服务器
+                        mSocket.connect();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }.start();
+        }
+    }
 
-    public void sendMessage(String massage){
+    //客户端发送信息
+    public void sendMessage(String massage) {
         //TODO sendMessage
+        try {
+            outputStream = mSocket.getOutputStream();
+            outputStream.write(massage.getBytes());
+            outputStream.flush();
+            outputStream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
-    public void sendFile(File file){
+    public void sendFile(File file) {
         //TODO
     }
 
 
-    public void disable(){
+    public void disable() {
         mBluetoothAdapter.disable();
     }
 
@@ -95,8 +146,8 @@ public class BlueToothOperation {
         return searchedDevices;
     }
 
-    public void addSearchedDevice(String name, BluetoothDevice device){
-        System.out.println("加入新设备："+name);
-        searchedDevices.put(name,device);
+    public void addSearchedDevice(String name, BluetoothDevice device) {
+        System.out.println("加入新设备：" + name);
+        searchedDevices.put(name, device);
     }
 }

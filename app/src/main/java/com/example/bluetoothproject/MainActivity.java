@@ -1,6 +1,8 @@
 package com.example.bluetoothproject;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
@@ -88,6 +90,7 @@ public class MainActivity extends AppCompatActivity {
         listView_searched = (ListView) findViewById(R.id.listView_searchedDevices);
         enableSwitch=(Switch)findViewById(R.id.switch_enable);
         listView_bounded=(ListView)findViewById(R.id.listView_boundedDevices);
+        blueToothOperation.initServerSocket();
         //注册监听器
         registerReceiver(receiver,getIntentFilter());
         //列表响应
@@ -117,6 +120,22 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        //检查权限（NEED_PERMISSION）是否被授权 PackageManager.PERMISSION_GRANTED表示同意授权
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.READ_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+            //如果应用之前请求过此权限但用户拒绝了请求，此方法将返回 true。
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    Manifest.permission.READ_EXTERNAL_STORAGE)) {//这里可以写个对话框之类的项向用户解释为什么要申请权限，并在对话框的确认键后续再次申请权限.它在用户选择"不再询问"的情况下返回false
+            } else {
+                //申请权限，字符串数组内是一个或多个要申请的权限，1是申请权限结果的返回参数，在onRequestPermissionsResult可以得知申请结果
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.READ_EXTERNAL_STORAGE,}, 1);
+            }
+        }
+
+
+
         //初次启动获取
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             // 开启时提醒请求获取位置权限
@@ -125,6 +144,8 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
+
+
 
     //开启蓝牙
     public void enableBlueTooth(){
