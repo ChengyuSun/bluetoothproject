@@ -5,14 +5,21 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 import android.os.Handler;
+import android.os.Message;
+import android.widget.EditText;
+import android.widget.ListView;
+import android.widget.Toast;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -32,6 +39,8 @@ public class BlueToothOperation {
 
     private OutputStream outputStream;
     private InputStream inputStream;
+
+    private List<String> infos = new ArrayList<>();
 
 
     public BlueToothOperation() {
@@ -89,6 +98,17 @@ public class BlueToothOperation {
                     mServerSocket = mBluetoothAdapter.listenUsingRfcommWithServiceRecord("server_socket", mUUID);
 
                     mSocket = mServerSocket.accept();
+
+                    while (mSocket != null) {
+                        char[] buff = new char[1024];
+                        inputStream = mSocket.getInputStream();
+                        InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+                        int len = inputStreamReader.read(buff);
+                        String string = new String(buff, 0, len);
+                        infos.add(string);
+                    }
+
+
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -97,8 +117,9 @@ public class BlueToothOperation {
     }
 
     //客户端调用，去找到相同mUUID的服务端
-    public void connect(String deviceName) {
+    public boolean connect(String deviceName) {
         final BluetoothDevice device = searchedDevices.get(deviceName);
+
         if (device != null) {
             new Thread() {
                 @Override
@@ -112,10 +133,14 @@ public class BlueToothOperation {
                     }
                 }
             }.start();
+
+            return true;
         }
+        else
+            return false;
     }
 
-    //客户端发送信息
+    //发送信息
     public void sendMessage(String massage) {
         //TODO sendMessage
         try {
@@ -126,6 +151,13 @@ public class BlueToothOperation {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    //接收信息
+    public List<String> getMessage() {
+        List<String> temp_infos=new ArrayList<>(infos);
+        infos.clear();
+        return temp_infos;
     }
 
     public void sendFile(File file) {

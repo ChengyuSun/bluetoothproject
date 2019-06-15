@@ -216,12 +216,18 @@ public class MainActivity extends AppCompatActivity {
     //连接设备-->进行界面跳转
     public void connect(int position){
         String objectName=boundedDeviceList.get(position);
-        blueToothOperation.connect(objectName);
-        Intent intent = new Intent(this, BoundedDeviceActivity.class);
-        intent.putExtra(object_name,objectName);
-        startActivity(intent);
+        if(blueToothOperation.connect(objectName)){
+            Intent intent = new Intent(this, BoundedDeviceActivity.class);
+            intent.putExtra(object_name,objectName);
+            startActivity(intent);
+        }
+        else{
+            Toast.makeText(getApplicationContext(), "建立连接失败", Toast.LENGTH_SHORT).show();
+        }
     }
 
+    public void getmessage(View view){
 
+    }
 
 }
